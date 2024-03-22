@@ -4,13 +4,13 @@ import OpenAPIURLSession
 
 public struct MessageData: Codable {
     var role: String
-    var content: String
+    var content: String?
+    var image_url: String?
 }
 
 public struct MessageList: Codable {
     var messages: [MessageData]
 }
-
 
 public struct OpenAIClient {
 
@@ -55,7 +55,7 @@ public struct OpenAIClient {
     }
     
     /// Use URLSession manually until swift-openapi-runtime support MultipartForm
-     public mutating func promptChatSW(message: String) async throws -> String {
+    public mutating func promptChatSW(message: String) async throws -> (text: String?, imageURL: String?) {
         let defaultURLString = "https://magixdev.azurewebsites.net/Chat"
         let resolvedURL = URL(string: defaultURLString)!
         
@@ -73,13 +73,14 @@ public struct OpenAIClient {
         guard let httpResp = resp as? HTTPURLResponse, httpResp.statusCode == 200 else {
             throw "Invalid Status Code \((resp as? HTTPURLResponse)?.statusCode ?? -1)"
         }
+        
         convertation = try JSONDecoder().decode(MessageList.self, from: data)
-         
-         guard let serverResp = convertation.messages.last else {
+        
+        guard let serverResp = convertation.messages.last else {
              throw "Invalid format"
          }
          
-         return serverResp.content
+        return (serverResp.content, serverResp.image_url)
     }
 
     public func generateSpeechFrom(input: String,
